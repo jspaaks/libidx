@@ -19,7 +19,7 @@ endif()
 
 add_executable(tgt_exe_example)
 
-set_property(TARGET tgt_exe_example PROPERTY OUTPUT_NAME example)
+set_property(TARGET tgt_exe_example PROPERTY OUTPUT_NAME example-idx)
 
 target_compile_definitions(
     tgt_exe_example
@@ -53,13 +53,13 @@ target_include_directories(
 target_link_libraries(
     tgt_exe_example
     PRIVATE
-        m
         tgt_lib_idx
 )
 
 target_sources(
     tgt_exe_example
     PRIVATE
+        ${PROJECT_ROOT}/src/example/bodies.c
         ${PROJECT_ROOT}/src/example/main.c
 )
 

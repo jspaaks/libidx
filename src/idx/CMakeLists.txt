@@ -53,16 +53,15 @@ target_include_directories(
 target_sources(
     tgt_lib_idx
     PRIVATE
-        ${PROJECT_ROOT}/src/idx/division.c
-        ${PROJECT_ROOT}/src/idx/multiplication.c
+        ${PROJECT_ROOT}/src/idx/idx.c
+        ${PROJECT_ROOT}/src/idx/protected.c
     PUBLIC
         FILE_SET fset_lib_idx_headers
         TYPE HEADERS
         BASE_DIRS
             ${PROJECT_ROOT}/include
         FILES
-            ${PROJECT_ROOT}/include/idx/division.h
-            ${PROJECT_ROOT}/include/idx/multiplication.h
+            ${PROJECT_ROOT}/include/idx/idx.h
 )
 
 install(TARGETS tgt_lib_idx

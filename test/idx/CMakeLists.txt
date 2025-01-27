@@ -50,8 +50,7 @@ target_link_libraries(
 target_sources(
     tgt_exe_test_idx
     PRIVATE
-        ${PROJECT_ROOT}/test/idx/test_division.c
-        ${PROJECT_ROOT}/test/idx/test_multiplication.c
+        ${PROJECT_ROOT}/test/idx/test_idx.c
 )
 
 add_test(

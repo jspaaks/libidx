@@ -1,25 +1,46 @@
+#include "bodies.h"
+#include "idx/idx.h"
 #include <stdio.h>
-#include <math.h>
-#include "idx/division.h"
-#include "idx/multiplication.h"
+#include <stdlib.h>
+#include <string.h>
 
-int main (void) {
-    fprintf(stdout, "-- test compile definitions\n");
-#ifndef DEBUG
-    fprintf(stdout, "   DEBUG compile definition has not been defined.\n");
-#else
-    fprintf(stdout, "   DEBUG compile definition has been defined.\n");
-#endif
-    fprintf(stdout, "\n");
+void show_usage(FILE * stream);
 
-    fprintf(stdout, "-- test whether math library was linked\n");
-    fprintf(stdout, "   sqrt(144) = %f\n", sqrt(144));
-    fprintf(stdout, "\n");
+int main (const int argc, const char * argv[]) {
+    if (argc != 2) {
+        show_usage(stderr);
+        exit(EXIT_FAILURE);
+    }
+    if (strncmp(argv[1], "-h", 3) == 0) {
+        show_usage(stdout);
+        exit(EXIT_SUCCESS);
+    }
+    const char * path = argv[1];
+    IdxHeader header = idx_read_header(path);
+    switch (header.type) {
+        case 0x08: {
+            read_uint8_and_print(path, header);
+            break;
+        }
+        case 0x09: {
+            read_int8_and_print(path, header);
+            break;
+        }
+        case 0x0b: {
+            read_int16_and_print(path, header);
+            break;
+        }
+        default: {
+            fprintf(stderr, "Unexpected type, aborting.\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+    return EXIT_SUCCESS;
+}
 
-    fprintf(stdout, "-- test own library\n");
-    fprintf(stdout, "   idx_divide(2, 3) = %d\n", idx_divide(2, 3));
-    fprintf(stdout, "   idx_multiply(2, 3) = %d\n", idx_multiply(2, 3));
-    fprintf(stdout, "\n");
 
-    return 0;
+void show_usage(FILE * stream) {
+    fprintf(stream, "Usage: ./example-idx FILEPATH\n"
+                    "   Illustrate the usage of the idx library by reading IDX-formatted\n"
+                    "   data from a binary file located at FILEPATH.\n");
 }
