@@ -2,91 +2,15 @@
 
 # libidx
 
-## CMake
+C library that can read IDX files, such as those from Yann LeCun et al's handwritten
+numbers data set as well as the Zalando fashion data set.
 
-The project has been initialized with a [CMakeLists.txt](CMakeLists.txt)-based
-configuration for building with CMake:
+The IDX format is described here: https://www.fon.hum.uva.nl/praat/manual/IDX_file_format.html
 
-```console
-# change into the build directory
-$ cd build/
+## Alternatives
 
-# generate the build files
-$ cmake ..
-
-# build the project
-$ cmake --build .
-
-# install the project to <repo>/build/dist
-$ cmake --install .
-
-# run the program to see if it works
-$ ./dist/bin/example
-```
-
-Should output something like:
-
-```text
--- test compile definitions
-   DEBUG compile definition has been defined.
-
--- test wether math library was linked
-   sqrt(144) = 12.000000
-
--- test c2x / c23 features
-   0 1 2 3 4
-
--- test own library
-   divide(2, 3) = 0
-   multiply(2, 3) = 6
-
-```
-
-## Testing
-
-Building and running the tests requires that [Criterion](https://github.com/Snaipe/Criterion) is
-installed on the system, e.g. with
-
-```console
-$ sudo apt install libcriterion-dev
-```
-
-Run the tests with
-
-```console
-$ ./dist/bin/test_idx -j1 --verbose
-```
-
- or simply, with:
-
-```console
-$ ctest
-```
-
-The CMake variable `IDX_BUILD_TESTING` can be used to build the
-tests.
-
-- When this project is the top project, `IDX_BUILD_TESTING` inherits the value of
-  CTest's `BUILD_TESTING`, which is set to ON by default.
-- When this project is not the top project but instead it is used as a dependency to a parent
-  project, the default is to not build the tests. However, building the tests is still possible by
-  setting the `IDX_BUILD_TESTING` to `ON`, e.g like so:
-
-```console
-$ cmake -DIDX_BUILD_TESTING=ON ..
-```
-
-## `clang-format`
-
-The file `.clang-format` contains an initial configuration for (automatic) formatting with [clang-format](https://clang.llvm.org/docs/ClangFormat.html). Run the formatter with e.g.:
-
-```console
-# dry run on main.c
-$ clang-format -Werror --dry-run main.c
-
-# format in place all *.c and *.h files under ./src
-$ clang-format -i `find ./src -type f -name '*.[c|h]'`
-```
+- https://github.com/JohnnyVM/idxc
+- https://github.com/BinAl-Sadiq/.idx
 
 ## Acknowledgements
 
