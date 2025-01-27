@@ -5,6 +5,9 @@
 #include <string.h>
 
 
+void print_header(const IdxHeader * header);
+
+
 void print_header(const IdxHeader * header) {
     fprintf(stdout,
            "header: {\n"
@@ -15,6 +18,7 @@ void print_header(const IdxHeader * header) {
            "    bodystart: %d\n"
            "}\n", header->type, header->ndims, header->nelems, header->bodystart);
 }
+
 
 void strategy_doubles (const char * path, const IdxHeader * header) {
     print_header(header);
