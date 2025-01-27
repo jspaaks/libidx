@@ -5,6 +5,7 @@
 
 void read_int8_and_print(const char * path, IdxHeader header);
 void read_int16_and_print(const char * path, IdxHeader header);
+void read_int32_and_print(const char * path, IdxHeader header);
 void read_uint8_and_print(const char * path, IdxHeader header);
 void show_usage(FILE * stream);
 

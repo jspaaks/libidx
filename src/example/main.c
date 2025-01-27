@@ -30,6 +30,10 @@ int main (const int argc, const char * argv[]) {
             read_int16_and_print(path, header);
             break;
         }
+        case 0x0c: {
+            read_int32_and_print(path, header);
+            break;
+        }
         default: {
             fprintf(stderr, "Unexpected type, aborting.\n");
             exit(EXIT_FAILURE);
