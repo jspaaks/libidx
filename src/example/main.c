@@ -1,10 +1,12 @@
-#include "bodies.h"
+#include "strategies.h"
 #include "idx/idx.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+
 void show_usage(FILE * stream);
+
 
 int main (const int argc, const char * argv[]) {
     if (argc != 2) {
@@ -16,33 +18,16 @@ int main (const int argc, const char * argv[]) {
         exit(EXIT_SUCCESS);
     }
     const char * path = argv[1];
-    IdxHeader header = idx_read_header(path);
-    switch (header.type) {
-        case 0x08: {
-            read_as_uint8_and_print(path, header);
-            break;
-        }
-        case 0x09: {
-            read_as_int8_and_print(path, header);
-            break;
-        }
-        case 0x0b: {
-            read_as_int16_and_print(path, header);
-            break;
-        }
-        case 0x0c: {
-            read_as_int32_and_print(path, header);
-            break;
-        }
-        case 0x0d: {
-            read_as_float_and_print(path, header);
-            break;
-        }
-        default: {
-            fprintf(stderr, "Unexpected type, aborting.\n");
-            exit(EXIT_FAILURE);
-        }
-    }
+    const Strategy strategies[16] = {
+        [0x08] = strategy_uint8s,
+        [0x09] = strategy_int8s,
+        [0x0b] = strategy_int16s,
+        [0x0c] = strategy_int32s,
+        [0x0d] = strategy_floats,
+        [0x0e] = strategy_doubles
+    };
+    const IdxHeader header = idx_read_header(path);
+    strategies[header.type](path, &header);
     return EXIT_SUCCESS;
 }
 

@@ -59,8 +59,8 @@ target_link_libraries(
 target_sources(
     tgt_exe_example
     PRIVATE
-        ${PROJECT_ROOT}/src/example/bodies.c
         ${PROJECT_ROOT}/src/example/main.c
+        ${PROJECT_ROOT}/src/example/strategies.c
 )
 
 install(TARGETS tgt_exe_example)
