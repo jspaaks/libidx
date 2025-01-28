@@ -54,6 +54,18 @@ body: [
 
 ## Testing
 
+The CMake variable `IDX_BUILD_TESTING` can be used to build the tests.
+
+- When this project is the top project, `IDX_BUILD_TESTING` inherits the value of
+  CTest's `BUILD_TESTING`, which is set to `ON` by default.
+- When this project is not the top project but instead it is used as a dependency to a parent
+  project, the default is to not build the tests. However, building the tests is still possible by
+  setting the `IDX_BUILD_TESTING` to `ON`, e.g like so:
+
+    ```console
+    $ cmake -DIDX_BUILD_TESTING=ON ..
+    ```
+
 Building and running the tests requires that [Criterion](https://github.com/Snaipe/Criterion) is
 installed on the system, e.g. with
 
@@ -71,19 +83,6 @@ $ ./dist/bin/test_idx -j1 --verbose
 
 ```console
 $ ctest
-```
-
-The CMake variable `IDX_BUILD_TESTING` can be used to build the
-tests.
-
-- When this project is the top project, `IDX_BUILD_TESTING` inherits the value of
-  CTest's `BUILD_TESTING`, which is set to `ON` by default.
-- When this project is not the top project but instead it is used as a dependency to a parent
-  project, the default is to not build the tests. However, building the tests is still possible by
-  setting the `IDX_BUILD_TESTING` to `ON`, e.g like so:
-
-```console
-$ cmake -DIDX_BUILD_TESTING=ON ..
 ```
 
 ## `clang-format`
