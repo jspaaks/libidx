@@ -14,6 +14,7 @@ struct idx_header {
 };
 
 
+const char * idx_get_type_name (const IdxHeader * header);
 double * idx_read_body_as_double (const char * path, const IdxHeader * header);
 float * idx_read_body_as_float (const char * path, const IdxHeader * header);
 int8_t * idx_read_body_as_int8 (const char * path, const IdxHeader * header);

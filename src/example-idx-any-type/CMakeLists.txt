@@ -17,24 +17,24 @@ elseif(UNIX)
     list(APPEND CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 endif()
 
-add_executable(tgt_exe_example)
+add_executable(tgt_exe_example_idx_any_type)
 
-set_property(TARGET tgt_exe_example PROPERTY OUTPUT_NAME example-idx)
+set_property(TARGET tgt_exe_example_idx_any_type PROPERTY OUTPUT_NAME example-idx-any-type)
 
 target_compile_definitions(
-    tgt_exe_example
+    tgt_exe_example_idx_any_type
     PRIVATE
         $<$<CONFIG:Debug>:DEBUG>
 )
 
 target_compile_features(
-    tgt_exe_example
+    tgt_exe_example_idx_any_type
     PRIVATE
         c_std_23
 )
 
 target_compile_options(
-    tgt_exe_example
+    tgt_exe_example_idx_any_type
     PRIVATE
         -Wall
         -Wextra
@@ -45,22 +45,22 @@ target_compile_options(
 )
 
 target_include_directories(
-    tgt_exe_example
+    tgt_exe_example_idx_any_type
     PRIVATE
         ${PROJECT_ROOT}/include
 )
 
 target_link_libraries(
-    tgt_exe_example
+    tgt_exe_example_idx_any_type
     PRIVATE
         tgt_lib_idx
 )
 
 target_sources(
-    tgt_exe_example
+    tgt_exe_example_idx_any_type
     PRIVATE
-        ${PROJECT_ROOT}/src/example/main.c
-        ${PROJECT_ROOT}/src/example/strategies.c
+        ${PROJECT_ROOT}/src/example-idx-any-type/main.c
+        ${PROJECT_ROOT}/src/example-idx-any-type/strategies.c
 )
 
-install(TARGETS tgt_exe_example)
+install(TARGETS tgt_exe_example_idx_any_type)

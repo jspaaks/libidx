@@ -11,9 +11,9 @@ void print_header(const IdxHeader * header);
 void print_header(const IdxHeader * header) {
     fprintf(stdout,
            "header: {\n"
-           "    type: 0x%02hhx,\n"
+           "    type: 0x%02hhx (%s),\n"
            "    ndims: %hhu,\n"
-           "    lengths: [", header->type, header->ndims);
+           "    lengths: [", header->type, idx_get_type_name(header), header->ndims);
     for (uint8_t i = 0; i < header->ndims; i++) {
         fprintf(stdout, "%s%u", i == 0 ? "" : ", ", header->lengths[i]);
     }

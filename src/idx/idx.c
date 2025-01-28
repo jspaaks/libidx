@@ -8,6 +8,21 @@
 #include <string.h>
 
 
+static const char * idx_type_names[16] = {
+    [0x08] = "uint8",
+    [0x09] = "int8",
+    [0x0b] = "int16",
+    [0x0c] = "int32",
+    [0x0d] = "float",
+    [0x0e] = "double",
+};
+
+
+const char * idx_get_type_name (const IdxHeader * header) {
+    return idx_type_names[header->type];
+}
+
+
 double * idx_read_body_as_double (const char * path, const IdxHeader * header) {
     // correct type casting depends on the data being exactly 8 bytes wide
     assert(sizeof(double) == 8 && "Unexpected size for data type double, aborting.\n");
