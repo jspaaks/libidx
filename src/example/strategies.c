@@ -13,10 +13,16 @@ void print_header(const IdxHeader * header) {
            "header: {\n"
            "    type: 0x%02hhx,\n"
            "    ndims: %hhu,\n"
-           "    lengths: [],\n"
+           "    lengths: [", header->type, header->ndims);
+    for (uint8_t i = 0; i < header->ndims; i++) {
+        fprintf(stdout, "%s%u", i == 0 ? "" : ", ", header->lengths[i]);
+    }
+    fprintf(stdout,
+           "],\n"
            "    nelems: %zu,\n"
            "    bodystart: %d\n"
-           "}\n", header->type, header->ndims, header->nelems, header->bodystart);
+           "}\n", header->nelems, header->bodystart);
+
 }
 
 
