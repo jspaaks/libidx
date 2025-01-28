@@ -19,15 +19,38 @@ $ cmake --build .
 $ cmake --install .
 
 # run the program to see if it works
-$ ./dist/bin/example-idx mydata.idx
+$ ./dist/bin/example-idx-any-type -h
 ```
 
-<!--
 Should output something like:
 
-```text
+```console
+Usage: ./example-idx-any-type FILEPATH
+   Illustrate the usage of the idx library by reading IDX-formatted
+   data from a binary file located at FILEPATH.
 ```
--->
+
+The [`data`](data) directory contains a few test files in IDX formats. Each file's body uses a
+different data type for its values.
+
+```console
+$ ./dist/bin/example-idx-any-type ../data/float.idx
+header: {
+    type: 0x0d (float),
+    ndims: 2,
+    lengths: [3, 2],
+    nelems: 6,
+    bodystart: 12
+}
+body: [
+    -3.40282e+38
+    -1
+    -0
+     0
+     1
+     3.40282e+38
+]
+```
 
 ## Testing
 

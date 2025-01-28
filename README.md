@@ -1,5 +1,7 @@
 # libidx
 
+For instructions on building etc, see [`README.dev.md`](README.dev.md).
+
 C library that can read IDX files, such as those from Yann LeCun et al's handwritten
 numbers data set as well as the Zalando fashion data set.
 
