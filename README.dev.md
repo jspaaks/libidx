@@ -30,7 +30,7 @@ Usage: ./example-idx-any-type FILEPATH
    data from a binary file located at FILEPATH.
 ```
 
-The [`data`](data) directory contains a few test files in IDX formats. Each file's body uses a
+The [`data`](data) directory contains a few test files in IDX format. Each file's body uses a
 different data type for its values.
 
 ```console
