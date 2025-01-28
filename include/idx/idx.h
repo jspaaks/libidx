@@ -14,6 +14,7 @@ struct idx_header {
 };
 
 // core api
+void idx_free_body (void ** body);
 IdxHeader idx_read_header (const char * path);
 void * idx_read_body (const char * path, const IdxHeader * header);
 const char * idx_get_type_name (const IdxHeader * header);

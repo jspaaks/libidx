@@ -18,6 +18,12 @@ static const char * idx_type_names[16] = {
 };
 
 
+void idx_free_body (void ** body) {
+    free(*body);
+    *body = nullptr;
+}
+
+
 const char * idx_get_type_name (const IdxHeader * header) {
     return idx_type_names[header->type];
 }

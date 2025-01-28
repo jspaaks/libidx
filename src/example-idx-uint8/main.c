@@ -28,7 +28,7 @@ int main (const int argc, const char * argv[]) {
     print_header(&header);
     uint8_t * body = idx_read_body_as_uint8(path, &header);
     print_body(&header, body);
-    free(body);
+    idx_free_body((void **) &body);
     return EXIT_SUCCESS;
 }
 

@@ -34,7 +34,7 @@ void strategy_doubles (const char * path, const IdxHeader * header) {
         fprintf(stdout, "\n    % lg", body[i]);
     }
     fprintf(stdout, "%s", header->nelems == 0 ? "]\n" : "\n]\n");
-    free(body);
+    idx_free_body((void **) &body);
 }
 
 
@@ -46,7 +46,7 @@ void strategy_floats (const char * path, const IdxHeader * header) {
         fprintf(stdout, "\n    % lg", body[i]);
     }
     fprintf(stdout, "%s", header->nelems == 0 ? "]\n" : "\n]\n");
-    free(body);
+    idx_free_body((void **) &body);
 }
 
 
@@ -58,7 +58,7 @@ void strategy_int8s (const char * path, const IdxHeader * header) {
         fprintf(stdout, "\n    % hhi", body[i]);
     }
     fprintf(stdout, "%s", header->nelems == 0 ? "]\n" : "\n]\n");
-    free(body);
+    idx_free_body((void **) &body);
 }
 
 
@@ -70,7 +70,7 @@ void strategy_int16s (const char * path, const IdxHeader * header) {
         fprintf(stdout, "\n    % hi", body[i]);
     }
     fprintf(stdout, "%s", header->nelems == 0 ? "]\n" : "\n]\n");
-    free(body);
+    idx_free_body((void **) &body);
 }
 
 
@@ -82,7 +82,7 @@ void strategy_int32s (const char * path, const IdxHeader * header) {
         fprintf(stdout, "\n    % d", body[i]);
     }
     fprintf(stdout, "%s", header->nelems == 0 ? "]\n" : "\n]\n");
-    free(body);
+    idx_free_body((void **) &body);
 }
 
 
@@ -94,5 +94,5 @@ void strategy_uint8s (const char * path, const IdxHeader * header) {
         fprintf(stdout, "\n    %hhu", body[i]);
     }
     fprintf(stdout, "%s", header->nelems == 0 ? "]\n" : "\n]\n");
-    free(body);
+    idx_free_body((void **) &body);
 }
