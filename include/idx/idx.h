@@ -13,14 +13,17 @@ struct idx_header {
     int bodystart;
 };
 
-
+// core api
+IdxHeader idx_read_header (const char * path);
+void * idx_read_body (const char * path, const IdxHeader * header);
 const char * idx_get_type_name (const IdxHeader * header);
+
+// type-casting wrappers around idx_read_body
 double * idx_read_body_as_double (const char * path, const IdxHeader * header);
 float * idx_read_body_as_float (const char * path, const IdxHeader * header);
 int8_t * idx_read_body_as_int8 (const char * path, const IdxHeader * header);
 int16_t * idx_read_body_as_int16 (const char * path, const IdxHeader * header);
 int32_t * idx_read_body_as_int32 (const char * path, const IdxHeader * header);
 uint8_t * idx_read_body_as_uint8 (const char * path, const IdxHeader * header);
-IdxHeader idx_read_header (const char * path);
 
 #endif

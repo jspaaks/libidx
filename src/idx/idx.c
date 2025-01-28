@@ -23,36 +23,7 @@ const char * idx_get_type_name (const IdxHeader * header) {
 }
 
 
-double * idx_read_body_as_double (const char * path, const IdxHeader * header) {
-    // correct type casting depends on the data being exactly 8 bytes wide
-    assert(sizeof(double) == 8 && "Unexpected size for data type double, aborting.\n");
-    return (double *) idx_read_body_as_uint8 (path, header);
-}
-
-
-float * idx_read_body_as_float (const char * path, const IdxHeader * header) {
-    // correct type casting depends on the data being exactly 4 bytes wide
-    assert(sizeof(float) == 4 && "Unexpected size for data type float, aborting.\n");
-    return (float *) idx_read_body_as_uint8 (path, header);
-}
-
-
-int8_t * idx_read_body_as_int8 (const char * path, const IdxHeader * header) {
-    return (int8_t *) idx_read_body_as_uint8 (path, header);
-}
-
-
-int16_t * idx_read_body_as_int16 (const char * path, const IdxHeader * header) {
-    return (int16_t *) idx_read_body_as_uint8 (path, header);
-}
-
-
-int32_t * idx_read_body_as_int32 (const char * path, const IdxHeader * header) {
-    return (int32_t *) idx_read_body_as_uint8 (path, header);
-}
-
-
-uint8_t * idx_read_body_as_uint8 (const char * path, const IdxHeader * header) {
+void * idx_read_body (const char * path, const IdxHeader * header) {
     const uint8_t widths[16] = {
         [0x08] = 1,
         [0x09] = 1,
@@ -91,7 +62,41 @@ uint8_t * idx_read_body_as_uint8 (const char * path, const IdxHeader * header) {
             swap_byte_order_in_place(width, &body[i * width]);
         }
     }
-    return body;
+    return (void *) body;
+}
+
+
+double * idx_read_body_as_double (const char * path, const IdxHeader * header) {
+    // correct type casting depends on the data being exactly 8 bytes wide
+    assert(sizeof(double) == 8 && "Unexpected size for data type double, aborting.\n");
+    return (double *) idx_read_body (path, header);
+}
+
+
+float * idx_read_body_as_float (const char * path, const IdxHeader * header) {
+    // correct type casting depends on the data being exactly 4 bytes wide
+    assert(sizeof(float) == 4 && "Unexpected size for data type float, aborting.\n");
+    return (float *) idx_read_body (path, header);
+}
+
+
+int8_t * idx_read_body_as_int8 (const char * path, const IdxHeader * header) {
+    return (int8_t *) idx_read_body (path, header);
+}
+
+
+int16_t * idx_read_body_as_int16 (const char * path, const IdxHeader * header) {
+    return (int16_t *) idx_read_body (path, header);
+}
+
+
+int32_t * idx_read_body_as_int32 (const char * path, const IdxHeader * header) {
+    return (int32_t *) idx_read_body (path, header);
+}
+
+
+uint8_t * idx_read_body_as_uint8 (const char * path, const IdxHeader * header) {
+    return (uint8_t *) idx_read_body (path, header);
 }
 
 
