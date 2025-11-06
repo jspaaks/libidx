@@ -17,7 +17,7 @@ elseif(UNIX)
     list(APPEND CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 endif()
 
-if (CMAKE_PROJECT_NAME)
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     # I'm the top-most project, set IDX_BUILD_TESTING like BUILD_TESTING by default
     option(IDX_BUILD_TESTING "Whether to build the libidx tests" ${BUILD_TESTING})
     option(IDX_BUILD_EXAMPLES "Whether to build the libidx examples" ON)
