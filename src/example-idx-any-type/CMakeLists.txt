@@ -1,22 +1,3 @@
-cmake_minimum_required(VERSION 3.23...3.28)
-
-set(PROJECT_ROOT ${CMAKE_CURRENT_LIST_DIR}/../..)
-
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
-endif()
-
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE "${CMAKE_BINARY_DIR}/dist")
-endif()
-
-set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
-if (APPLE)
-    list(APPEND CMAKE_INSTALL_RPATH @loader_path/../lib)
-elseif(UNIX)
-    list(APPEND CMAKE_INSTALL_RPATH $ORIGIN/../lib)
-endif()
-
 add_executable(tgt_exe_example_idx_any_type)
 
 set_property(TARGET tgt_exe_example_idx_any_type PROPERTY OUTPUT_NAME example-idx-any-type)
@@ -39,15 +20,17 @@ target_compile_options(
         -Wall
         -Wextra
         -pedantic
+        -fPIE
         $<$<CONFIG:Debug>:-g>
         $<$<CONFIG:Debug>:-O0>
+        $<$<BOOL:${EXAMPLE_IDX_ANY_TYPE_WITH_ASAN}>:-fsanitize=address>
         $<$<CONFIG:Release>:-Werror>
 )
 
 target_include_directories(
     tgt_exe_example_idx_any_type
     PRIVATE
-        ${PROJECT_ROOT}/include
+        ../../include
 )
 
 target_link_libraries(
@@ -56,11 +39,18 @@ target_link_libraries(
         tgt_lib_idx
 )
 
+target_link_options(
+    tgt_exe_example_idx_any_type
+    PRIVATE
+        -pie
+        $<$<BOOL:${EXAMPLE_IDX_ANY_TYPE_WITH_ASAN}>:-fsanitize=address>
+)
+
 target_sources(
     tgt_exe_example_idx_any_type
     PRIVATE
-        ${PROJECT_ROOT}/src/example-idx-any-type/main.c
-        ${PROJECT_ROOT}/src/example-idx-any-type/strategies.c
+        main.c
+        strategies.c
 )
 
 install(TARGETS tgt_exe_example_idx_any_type)

@@ -1,25 +1,13 @@
-cmake_minimum_required(VERSION 3.23...3.28)
-
-set(PROJECT_ROOT ${CMAKE_CURRENT_LIST_DIR}/../..)
-
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
-endif()
-
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE "${CMAKE_BINARY_DIR}/dist")
-endif()
-
-set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
-if (APPLE)
-    list(APPEND CMAKE_INSTALL_RPATH @loader_path/../lib)
-elseif(UNIX)
-    list(APPEND CMAKE_INSTALL_RPATH $ORIGIN/../lib)
-endif()
-
 add_library(tgt_lib_idx SHARED)
 
+set_property(TARGET tgt_lib_idx PROPERTY C_VISIBILITY_PRESET hidden)
 set_property(TARGET tgt_lib_idx PROPERTY OUTPUT_NAME idx)
+
+generate_export_header(
+    tgt_lib_idx
+    BASE_NAME idx
+    EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/include/idx/export.h
+)
 
 target_compile_definitions(
     tgt_lib_idx
@@ -39,29 +27,39 @@ target_compile_options(
         -Wall
         -Wextra
         -pedantic
+        -fPIC
         $<$<CONFIG:Debug>:-g>
         $<$<CONFIG:Debug>:-O0>
+        $<$<BOOL:${IDX_WITH_ASAN}>:-fsanitize=address>
         $<$<CONFIG:Release>:-Werror>
 )
 
 target_include_directories(
     tgt_lib_idx
     PRIVATE
-        ${PROJECT_ROOT}/include
+        ../../include
+)
+
+target_link_options(
+    tgt_lib_idx
+    PRIVATE
+        $<$<BOOL:${IDX_WITH_ASAN}>:-fsanitize=address>
 )
 
 target_sources(
     tgt_lib_idx
     PRIVATE
-        ${PROJECT_ROOT}/src/idx/idx.c
-        ${PROJECT_ROOT}/src/idx/protected.c
+		idx.c
+        protected.c
     PUBLIC
         FILE_SET fset_lib_idx_headers
-        TYPE HEADERS
-        BASE_DIRS
-            ${PROJECT_ROOT}/include
-        FILES
-            ${PROJECT_ROOT}/include/idx/idx.h
+            TYPE HEADERS
+            BASE_DIRS
+                ../../include
+                ${CMAKE_BINARY_DIR}/include  # contains cmake-generated file
+            FILES
+                ../../include/idx/idx.h
+                ${CMAKE_BINARY_DIR}/include/idx/export.h  # cmake-generated file
 )
 
 install(TARGETS tgt_lib_idx

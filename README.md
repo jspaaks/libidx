@@ -7,23 +7,23 @@ numbers data set as well as the Zalando fashion data set.
 
 The IDX format is described here: https://www.fon.hum.uva.nl/praat/manual/IDX_file_format.html
 
-## Libraries
+The project builds the following libraries and executables:
 
-- `libidx`: C library to read IDX files. For library API, see
+- library `libidx`: C library to read IDX files. For library API, see
     [`include/idx/idx.h`](include/idx/idx.h).
-
-## Executables
-
-- `example-idx-any-type`: example program illustrating how to read data of any of the IDX-supported
+- executable `example-idx-any-type`: example program illustrating how to read data of any of the IDX-supported
     types (`uint8_t` / `unsigned char`, `int8_t` / signed `char`, `int16_t` / signed `short` ,
     `int32_t` / signed `int`, 32-bit `float`, 64-bit `double`).
-- `example-idx-uint8`: example program illustrating how to read data that is known to be in
+- executable `example-idx-uint8`: example program illustrating how to read data that is known to be in
     `uint8_t` / `unsigned char` type.
 
 ## Alternatives
 
 - https://github.com/JohnnyVM/idxc
 - https://github.com/BinAl-Sadiq/.idx
+- https://github.com/bwhmather/libidx
+- https://github.com/spytheman/MNIST-idx1-and-idx3-file-readers
+- https://github.com/KaitlynEthylia/libidx
 
 ## Acknowledgements
 
