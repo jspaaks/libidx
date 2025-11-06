@@ -2,7 +2,6 @@ add_library(tgt_lib_idx SHARED)
 
 set_property(TARGET tgt_lib_idx PROPERTY C_VISIBILITY_PRESET hidden)
 set_property(TARGET tgt_lib_idx PROPERTY OUTPUT_NAME idx)
-set_property(TARGET tgt_lib_idx PROPERTY VISIBILITY_INLINES_HIDDEN YES)
 
 generate_export_header(
     tgt_lib_idx
