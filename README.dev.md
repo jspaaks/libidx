@@ -27,7 +27,7 @@ $ cmake --install . --prefix dist/
 
 The above should produce a library, libidx, as well as some executables. 
 
-```text
+```console
 $ ./dist/bin/example-idx-uint8
 Usage: ./example-idx-uint8 FILEPATH
    Illustrate the usage of the idx library by reading IDX-formatted data
