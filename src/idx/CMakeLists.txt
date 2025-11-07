@@ -49,7 +49,7 @@ target_link_options(
 target_sources(
     tgt_lib_idx
     PRIVATE
-		idx.c
+        idx.c
         protected.c
     PUBLIC
         FILE_SET fset_lib_idx_headers
