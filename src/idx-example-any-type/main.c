@@ -33,7 +33,7 @@ int main (const int argc, const char * argv[]) {
 
 
 void show_usage(FILE * stream) {
-    fprintf(stream, "Usage: ./example-idx-any-type FILEPATH\n"
+    fprintf(stream, "Usage: ./idx-example-any-type FILEPATH\n"
                     "   Illustrate the usage of the idx library by reading IDX-formatted\n"
                     "   data from a binary file located at FILEPATH.\n");
 }

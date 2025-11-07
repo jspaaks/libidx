@@ -60,7 +60,7 @@ void print_header (const IdxHeader * header) {
 
 
 void show_usage(FILE * stream) {
-    fprintf(stream, "Usage: ./example-idx-uint8 FILEPATH\n"
+    fprintf(stream, "Usage: ./idx-example-uint8 FILEPATH\n"
                     "   Illustrate the usage of the idx library by reading IDX-formatted data\n"
                     "   from a binary file located at FILEPATH. The 3rd byte in the file should\n"
                     "   be 0x08 to indicate that the body consists of uint8 values.\n");
