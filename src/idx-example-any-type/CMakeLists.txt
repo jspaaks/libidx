@@ -50,7 +50,6 @@ target_sources(
     tgt_exe_idx_example_any_type
     PRIVATE
         main.c
-        strategies.c
 )
 
 install(TARGETS tgt_exe_idx_example_any_type)
