@@ -60,7 +60,7 @@ target_sources(
                 ${CMAKE_BINARY_DIR}/include  # contains cmake-generated file
             FILES
                 ../../include/idx/idx.h
-                ${CMAKE_BINARY_DIR}/include/idx/export.h  # cmake-generated file
+                ${CMAKE_BINARY_DIR}/include/idx/abi.h  # cmake-generated file
 )
 
 install(TARGETS tgt_lib_idx
