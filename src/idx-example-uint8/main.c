@@ -1,4 +1,5 @@
 #include "idx/idx.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,17 +19,47 @@ int main (const int argc, const char * argv[]) {
         show_usage(stdout);
         exit(EXIT_SUCCESS);
     }
-    const char * path = argv[1];
-    const IdxHeader header = idx_read_header(path);
-    if (header.type != 0x08) {
-        fprintf(stderr, "Expected data in file \"%s\" to be of type 0x08 (uint8) but fou"
-                "nd 0x%02hhx (%s), aborting.\n", path, header.type, idx_get_type_name(&header));
-        exit(EXIT_FAILURE);
+
+    IdxHeader header = {};
+    const char * path = nullptr;
+    uint8_t * body = nullptr;
+
+    // read the metadata from the header and print it to stdout
+    {
+        path = argv[1];
+        header = idx_read_header(path);
+        if (header.type != 0x08) {
+            fprintf(stderr, "Expected data in file \"%s\" to be of type 0x08 (uint8) but fou"
+                    "nd 0x%02hhx (%s), aborting.\n", path, header.type, idx_get_type_name(&header));
+            exit(EXIT_FAILURE);
+        }
+        print_header(&header);
     }
-    print_header(&header);
-    uint8_t * body = idx_read_body_as_uint8(path, &header);
-    print_body(&header, body);
-    idx_free_body((void **) &body);
+
+    // allocate memory for the data
+    {
+        errno = 0;
+        body = calloc(1, header.nbytes);
+        if (body == nullptr) {
+            fprintf(stderr,
+                    "Something went wrong allocating dynamic memory for body, aborting; %s\n",
+                    strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // read the data and print it to stdout
+    {
+        idx_read_body_as_uint8(path, &header, body);
+        print_body(&header, body);
+    }
+
+    // free resources
+    {
+        free(body);
+        body = nullptr;
+    }
+
     return EXIT_SUCCESS;
 }
 
@@ -54,8 +85,9 @@ void print_header (const IdxHeader * header) {
     fprintf(stdout,
            "],\n"
            "    nelems: %zu,\n"
+           "    nbytes: %zu,\n"
            "    bodystart: %d\n"
-           "}\n", header->nelems, header->bodystart);
+           "}\n", header->nelems, header->nbytes, header->bodystart);
 }
 
 

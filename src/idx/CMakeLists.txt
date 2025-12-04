@@ -6,7 +6,9 @@ set_property(TARGET tgt_lib_idx PROPERTY OUTPUT_NAME idx)
 generate_export_header(
     tgt_lib_idx
     BASE_NAME idx
-    EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/include/idx/export.h
+    EXPORT_MACRO_NAME IDX_ABI
+    NO_EXPORT_MACRO_NAME IDX_NO_ABI
+    EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/include/idx/abi.h
 )
 
 target_compile_definitions(
@@ -50,7 +52,6 @@ target_sources(
     tgt_lib_idx
     PRIVATE
         idx.c
-        protected.c
     PUBLIC
         FILE_SET fset_lib_idx_headers
             TYPE HEADERS
