@@ -1,186 +1,292 @@
 #include "idx/idx.h"
-#include <assert.h>
 #include <errno.h>
-#include <stddef.h>
+#include <inttypes.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <inttypes.h>
-
-
-static uint8_t read_ndims (FILE * fp);
-static uint8_t read_type (FILE * fp);
-static uint8_t read_uint8(FILE * fp, size_t pos);
-static void swap_byte_order_in_place (size_t n, uint8_t * bytes);
-static void validate_magic_number (FILE * fp);
-
-const char * idx_type_names[16] = {
-    [0x08] = "uint8",
-    [0x09] = "int8",
-    [0x0b] = "int16",
-    [0x0c] = "int32",
-    [0x0d] = "float",
-    [0x0e] = "double",
+// implementation-defined opaque type
+struct idx_file_object {
+    IdxDataType type;
+    uint8_t ndims;
+    uint32_t * lengths;
+    size_t nelems;
+    uint8_t * buffer;
 };
 
+struct idx_type_prop {
+    char * name;
+    int width;
+};
 
-const char * idx_get_type_name (const IdxHeader * header) {
-    return idx_type_names[header->type];
+const struct idx_type_prop idx_type_props[IDX_DATA_TYPE_DOUBLE + 1] = {
+    [IDX_DATA_TYPE_UINT8] = {.name = "uint8", .width = 1},
+    [IDX_DATA_TYPE_INT8] = {.name = "int8", .width = 1},
+    [IDX_DATA_TYPE_INT16] = {.name = "int16", .width = 2},
+    [IDX_DATA_TYPE_INT32] = {.name = "int32", .width = 4},
+    [IDX_DATA_TYPE_FLOAT] = {.name = "float", .width = 4},
+    [IDX_DATA_TYPE_DOUBLE] = {.name = "double", .width = 8},
+};
+
+static size_t calc_nelems (const uint32_t * lengths, int ndims);
+static void close_file (FILE * fp);
+static FILE * open_file (const char * filepath);
+static uint8_t * read_body (FILE * fp, int ndims, size_t nelems, IdxDataType type);
+static IdxDataType read_data_type (FILE * fp);
+static uint32_t * read_dimension_lengths (FILE * fp, int ndims);
+static uint8_t read_ndims (FILE * fp);
+static uint8_t read_uint8 (FILE * fp, const size_t pos);
+static void swap_byte_order_in_place (const int nbytes, uint8_t * bytes);
+static void validate_magic_number (FILE * fp);
+
+
+static size_t calc_nelems (const uint32_t * lengths, int ndims) {
+    size_t nelems = 1;
+    for (int idim = 0; idim < ndims; idim++) {
+        nelems *= lengths[idim];
+    }
+    return nelems;
 }
 
-void idx_read_body_as_double (const char * path, const IdxHeader * header, double * buffer) {
-    // correct type casting depends on the data being exactly 8 bytes wide
-    assert(sizeof(double) == 8 && "Unexpected size for data type double, aborting.\n");
-    idx_read_body_as_uint8(path, header, (uint8_t *) buffer);
+static void close_file (FILE * fp) {
+    fclose(fp);
 }
 
+struct idx_file_object * idx_create_and_read (const char * filepath) {
+    FILE * fp = open_file(filepath);
+    validate_magic_number(fp);
+    uint8_t type = read_data_type(fp);
+    uint8_t ndims = read_ndims(fp);
+    uint32_t * lengths = read_dimension_lengths(fp, ndims);
+    size_t nelems = calc_nelems(lengths, ndims);
+    uint8_t * buffer = read_body(fp, ndims, nelems, type);
+    close_file(fp);
 
-void idx_read_body_as_float (const char * path, const IdxHeader * header, float * buffer) {
-    // correct type casting depends on the data being exactly 4 bytes wide
-    assert(sizeof(float) == 4 && "Unexpected size for data type float, aborting.\n");
-    idx_read_body_as_uint8(path, header, (uint8_t *) buffer);
+    struct idx_file_object * o = calloc(1, sizeof(struct idx_file_object));
+    if (o == nullptr) {
+        fprintf(stderr, "Something went wrong allocating dynamic memory for `struct idx_file_object`, aborting.\n");
+        exit(EXIT_FAILURE);
+    }
+    *o = (struct idx_file_object) {
+        .type = type,
+        .ndims = ndims,
+        .lengths = lengths,
+        .nelems = nelems,
+        .buffer = buffer,
+    };
+    return o;
 }
 
+void idx_destroy (struct idx_file_object ** self) {
+    free((*self)->lengths);
+    (*self)->lengths = nullptr;
 
-void idx_read_body_as_int8 (const char * path, const IdxHeader * header, int8_t * buffer) {
-    idx_read_body_as_uint8(path, header, (uint8_t *) buffer);
+    free((*self)->buffer);
+    (*self)->buffer = nullptr;
+
+    free(*self);
+    *self = nullptr;
 }
 
-
-void idx_read_body_as_int16 (const char * path, const IdxHeader * header, int16_t * buffer) {
-    idx_read_body_as_uint8(path, header, (uint8_t *) buffer);
+int idx_get_dim_length (const struct idx_file_object * self, int idim) {
+    uint32_t length = idx_get_dim_length_raw(self, idim);
+    size_t w = sizeof(int) * 8;
+    if (length <= INT_MAX) return (int) length;
+    fprintf(stderr, "Dimension %d of length %" PRIu32 " is too large to fit in a %zu-bit int, "
+                    "try using the *_raw counterpart\nof this function; aborting.\n", idim, length, w);
+    exit(EXIT_FAILURE);
 }
 
-
-void idx_read_body_as_int32 (const char * path, const IdxHeader * header, int32_t * buffer) {
-    idx_read_body_as_uint8(path, header, (uint8_t *) buffer);
+uint32_t idx_get_dim_length_raw (const struct idx_file_object * self, int idim) {
+    if (0 <= idim && idim < self->ndims) {
+        return self->lengths[idim];
+    }
+    fprintf(stderr, "Out of range value for `idim`, aborting.\n");
+    exit(EXIT_FAILURE);
 }
 
+int idx_get_ndims (const struct idx_file_object * self) {
+    // uint8_t always fits within int, can use casting directly
+    return (int) idx_get_ndims_raw(self);
+}
 
-void idx_read_body_as_uint8 (const char * path, const IdxHeader * header, uint8_t * buffer) {
+uint8_t idx_get_ndims_raw (const struct idx_file_object * self) {
+    return self->ndims;
+}
 
-    // open the binary file from `path`
+int idx_get_nelems (const struct idx_file_object * self) {
+    size_t nelems = idx_get_nelems_raw(self);
+    size_t w = sizeof(int) * 8;
+    if (nelems <= INT_MAX) return (int) nelems;
+    fprintf(stderr, "Number of elements (%zu) is too large to fit in a %zu-bit int, "
+                    "try using *_raw counterpart\nof this function; aborting.\n", nelems, w);
+    exit(EXIT_FAILURE);
+}
+
+size_t idx_get_nelems_raw (const struct idx_file_object * self) {
+    return self->nelems;
+}
+
+IdxDataType idx_get_type (const struct idx_file_object * self) {
+    return self->type;
+}
+
+const char * idx_get_type_name (const struct idx_file_object * self) {
+    return idx_type_props[self->type].name;
+}
+
+const double * idx_get_data_double (const struct idx_file_object * self) {
+    if (self->type == IDX_DATA_TYPE_DOUBLE) {
+        return (const double *) self->buffer;
+    }
+    fprintf(stderr, "Data is not in double format, aborting.\n");
+    exit(EXIT_FAILURE);
+}
+
+const float * idx_get_data_float (const struct idx_file_object * self) {
+    if (self->type == IDX_DATA_TYPE_FLOAT) {
+        return (const float *) self->buffer;
+    }
+    fprintf(stderr, "Data is not in float format, aborting.\n");
+    exit(EXIT_FAILURE);
+}
+
+const int8_t * idx_get_data_int8 (const struct idx_file_object * self) {
+    if (self->type == IDX_DATA_TYPE_INT8) {
+        return (const int8_t *) self->buffer;
+    }
+    fprintf(stderr, "Data is not in int8_t format, aborting.\n");
+    exit(EXIT_FAILURE);
+}
+
+const int16_t * idx_get_data_int16 (const struct idx_file_object * self) {
+    if (self->type == IDX_DATA_TYPE_INT16) {
+        return (const int16_t *) self->buffer;
+    }
+    fprintf(stderr, "Data is not in int16_t format, aborting.\n");
+    exit(EXIT_FAILURE);
+}
+
+const int32_t * idx_get_data_int32 (const struct idx_file_object * self) {
+    if (self->type == IDX_DATA_TYPE_INT32) {
+        return (const int32_t *) self->buffer;
+    }
+    fprintf(stderr, "Data is not in int32_t format, aborting.\n");
+    exit(EXIT_FAILURE);
+}
+
+const uint8_t * idx_get_data_uint8 (const struct idx_file_object * self) {
+    if (self->type == IDX_DATA_TYPE_UINT8) {
+        return (const uint8_t *) self->buffer;
+    }
+    fprintf(stderr, "Data is not in uint8_t format, aborting.\n");
+    exit(EXIT_FAILURE);
+}
+
+static FILE * open_file(const char * filepath) {
     errno = 0;
-    FILE * fp = fopen(path, "rb");
-
-    // use information from the header to skip to the beginning of the data body
-    fseek(fp, header->bodystart, SEEK_SET);
+    FILE * fp = fopen(filepath, "rb");
     if (fp == nullptr) {
-        fprintf(stderr, "%s\nError reading binary data from file '%s', aborting.\n", strerror(errno), path);
-        errno = 0;
+        fprintf(stderr, "%s\nError reading binary data from file '%s', aborting.\n",
+                strerror(errno), filepath);
+        exit(EXIT_FAILURE);
+    }
+    return fp;
+}
+
+static uint8_t * read_body (FILE * fp, int ndims, size_t nelems, IdxDataType type) {
+    // determine how much space we need given we want to store `nelems` data of type `type`
+    int w = idx_type_props[type].width;
+    const size_t nbytes = w * nelems;
+
+    // allocate dynamic mmory for storing the body data
+    errno = 0;
+    uint8_t * body = calloc(nbytes * sizeof(uint8_t), 1);
+    if (body == nullptr) {
+        fprintf(stderr, "%s\nError allocating memory for IDX body, aborting.\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
-    // read the complete body as uint8_t
-    const size_t count = fread(buffer, 1, header->nbytes, fp);
-    if (count != header->nbytes) {
-        fprintf(stderr, "Something went wrong reading data from file \"%s\", aborting.\n", path);
+    // put the cursor at the starting byte of the body
+    int start = 2 + 1 + 1 + ndims * sizeof(uint32_t);
+    fseek(fp, start, SEEK_SET);
+
+    // read nbytes into `body`
+    const size_t count = fread(body, 1, nbytes, fp);
+    if (count != nbytes) {
+        fprintf(stderr, "Something went wrong reading data from IDX file, aborting.\n");
         fclose(fp);
         exit(EXIT_FAILURE);
     }
 
-    // close the file
-    fclose(fp);
-
-    // swap byte order if needed
-    if (header->nbytes > header->nelems) {
-        const size_t width = header->nbytes / header->nelems;
-        for (size_t i = 0; i < header->nelems; i++) {
-            swap_byte_order_in_place(width, &buffer[i * width]);
+    // swap byte order for types of width > 1
+    if (w > 1) {
+        for (size_t i = 0; i < nelems; i++) {
+            swap_byte_order_in_place(w, &body[i * w]);
         }
     }
+    return body;
 }
 
-
-IdxHeader idx_read_header (const char * path) {
-
-    // define the widths in number of bytes for each supported data type
-    const uint8_t widths[16] = {
-        [0x08] = 1,
-        [0x09] = 1,
-        [0x0b] = 2,
-        [0x0c] = 4,
-        [0x0d] = 4,
-        [0x0e] = 8
-    };
-    FILE * fp = nullptr;
-    IdxHeader header = {};
-
-    // open the binary file at path
-    {
-        errno = 0;
-        fp = fopen(path, "rb");
-        if (fp == nullptr) {
-            fprintf(stderr, "%s\nError reading binary data from file '%s', aborting.\n", strerror(errno), path);
-            errno = 0;
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    // validate that the file's first two bytes are correct
-    {
-        validate_magic_number(fp);
-    }
-
-    // read the identifier for the body's data type / width
-    {
-        header.type = read_type(fp);
-    }
-
-    // read the number of dimensions
-    {
-        header.ndims = read_ndims (fp);
-    }
-
-    // read length of each dimension; dimension lengths are stored as 32 bit unsigned integers
-    // (most significant byte first), starting at byte at index 2 + 1 + 1 = 4; then, determine how
-    // many data elements there are
-    {
-        const size_t width = 4; // dimensions are defined as uint32_t
-        const uint8_t start = 4;
-        const size_t nbytes = header.ndims * width;
-        fseek(fp, start, SEEK_SET);
-        size_t count = fread(&header.lengths[0], 1, nbytes, fp);
-        if (count != nbytes) {
-            fprintf(stderr, "Something went wrong reading dimension lengths, aborting.\n");
+static IdxDataType read_data_type (FILE * fp) {
+    // the byte at index 2 contains an indicator for the body's data type
+    uint8_t val = read_uint8(fp, 2);
+    switch (val) {
+        case 0x08: return IDX_DATA_TYPE_UINT8;
+        case 0x09: return IDX_DATA_TYPE_INT8;
+        case 0x0B: return IDX_DATA_TYPE_INT16;
+        case 0x0C: return IDX_DATA_TYPE_INT32;
+        case 0x0D: return IDX_DATA_TYPE_FLOAT;
+        case 0x0E: return IDX_DATA_TYPE_DOUBLE;
+        default:
+            fprintf(stderr, "IDX file has invalid data type, aborting.\n");
             fclose(fp);
             exit(EXIT_FAILURE);
-        }
-        header.nelems = 1;
-        for (size_t i = 0; i < header.ndims; i++) {
-            swap_byte_order_in_place(width, (uint8_t *) &header.lengths[i]);
-            header.nelems *= header.lengths[i];
-        }
     }
-
-    // don't need the file open anymore
-    fclose(fp);
-
-    // determine the number of bytes in the data body and at what byte the data body starts
-    {
-        header.nbytes = widths[header.type] * header.nelems;
-        header.bodystart = 2 + 1 + 1 + header.ndims * 4;
-    }
-
-    return header;
 }
 
+static uint32_t * read_dimension_lengths (FILE * fp, int ndims) {
+    // allocate dynamic memory to store the length of all dimensions
+    uint32_t * lengths = calloc(ndims, sizeof(uint32_t));
+    if (lengths == nullptr) {
+        fprintf(stderr, "Something went wrong allocating memory for dimension lengths, aborting.\n");
+        fclose(fp);
+        exit(EXIT_FAILURE);
+    }
+
+    // set the cursor to the position where the dimension lengths start
+    fseek(fp, 4, SEEK_SET);
+
+    // determine how many bytes to read
+    const uint8_t width = sizeof(uint32_t);
+    const size_t nbytes = ndims * width;
+
+    // read nbytes bytes into uint32_t memory
+    size_t count = fread(&lengths[0], 1, nbytes, fp);
+
+    // check if the correct number of bytes was read
+    if (count != nbytes) {
+        fprintf(stderr, "Something went wrong reading dimension lengths, aborting.\n");
+        fclose(fp);
+        exit(EXIT_FAILURE);
+    }
+
+    // adjust the byte order
+    for (int idim = 0; idim < ndims; idim++) {
+        swap_byte_order_in_place(width, (uint8_t *) &lengths[idim]);
+    }
+
+    return lengths;
+}
 
 static uint8_t read_ndims (FILE * fp) {
     // the byte at index 3 contains the number of dimensions
     return read_uint8(fp, 3);
 }
 
-
-static uint8_t read_type (FILE * fp) {
-    // the byte at index 2 contains an indicator for the body's data type
-    return read_uint8(fp, 2);
-}
-
-
-static uint8_t read_uint8(FILE * fp, const size_t pos) {
+static uint8_t read_uint8 (FILE * fp, const size_t pos) {
     // read the byte at index pos
     if (fseek(fp, pos, SEEK_SET) == -1) goto error;
     uint8_t result;
@@ -189,27 +295,24 @@ static uint8_t read_uint8(FILE * fp, const size_t pos) {
     return result;
 error:
     fprintf(stderr, "%s\nError reading byte, aborting.\n", strerror(errno));
-    errno = 0;
     fclose(fp);
     exit(EXIT_FAILURE);
 }
 
-
-static void swap_byte_order_in_place(const size_t nbytes, uint8_t * bytes) {
+static void swap_byte_order_in_place (const int nbytes, uint8_t * bytes) {
     // swap the byte order of the next 'nbytes' bytes counting from 'bytes'
     uint8_t swap;
     if (nbytes % 2 != 0) {
         fprintf(stderr, "Expected an even number of bytes when swapping byte order, aborting.\n");
         exit(EXIT_FAILURE);
     }
-    for (size_t i = 0; i < nbytes / 2; i++) {
-        size_t j = nbytes - 1 - i;
+    for (int i = 0; i < nbytes / 2; i++) {
+        int j = nbytes - 1 - i;
         swap = bytes[i];
         bytes[i] = bytes[j];
         bytes[j] = swap;
     }
 }
-
 
 static void validate_magic_number (FILE * fp) {
     // validate that first two bytes are 0

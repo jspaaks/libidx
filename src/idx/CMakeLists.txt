@@ -6,9 +6,9 @@ set_property(TARGET tgt_lib_idx PROPERTY OUTPUT_NAME idx)
 generate_export_header(
     tgt_lib_idx
     BASE_NAME idx
-    EXPORT_MACRO_NAME IDX_ABI
-    NO_EXPORT_MACRO_NAME IDX_NO_ABI
-    EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/include/idx/abi.h
+    EXPORT_MACRO_NAME IDX_EXPORT
+    NO_EXPORT_MACRO_NAME IDX_NO_EXPORT
+    EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/include/idx/export.h
 )
 
 target_compile_definitions(
@@ -60,7 +60,7 @@ target_sources(
                 ${CMAKE_BINARY_DIR}/include  # contains cmake-generated file
             FILES
                 ../../include/idx/idx.h
-                ${CMAKE_BINARY_DIR}/include/idx/abi.h  # cmake-generated file
+                ${CMAKE_BINARY_DIR}/include/idx/export.h  # cmake-generated file
 )
 
 install(TARGETS tgt_lib_idx
