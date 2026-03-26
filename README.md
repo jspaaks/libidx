@@ -15,7 +15,8 @@ The project builds the following libraries and executables:
   of type `int16_t`
 - executable `example_uint8_1d`: example program illustrating how to read a one-dimensional array
   of type `uint8_t`
-- executable `idxread`: program that reads an IDX file and prints it to standard out
+- executable `idxread`: program that reads an IDX file and prints its metadata or its contents to
+  standard out
 
 ## Example program
 

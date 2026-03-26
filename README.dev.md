@@ -62,14 +62,26 @@ $ ./dist/bin/example-int16-2d ../data/int16.2d.idx
 
 ```console
 $ ./dist/bin/idxread -h
-Usage: ./dist/bin/idxread FILEPATH
+Usage: ./dist/bin/idxread [-m | --show-meta] FILEPATH
 
     Read IDX-formatted data from a binary file located at FILEPATH.
 
-$ ./dist/bin/idxread ../data/float.2d.idx
--3.403e+38         -1
-        -0          0
-         1  3.403e+38
+    Options
+
+    -m | --show-meta
+
+        Show the metadata of the data in FILEPATH 
+
+$ ./dist/bin/idxread -m ../data/int16.2d.idx
+path              : ../data/int16.2d.idx
+type              : 0x0b (int16)
+ndims             : 2 
+dimension lengths : 3 2 
+number of elements: 6
+$ ./dist/bin/idxread ../data/int16.2d.idx
+-32768     -1
+     0      0
+     1  32767
 ```
 
 ## Build flags
