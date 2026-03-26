@@ -23,16 +23,20 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     # I'm the top-most project, set IDX_BUILD_TESTING like BUILD_TESTING by default
     option(IDX_BUILD_TESTING "Whether to build the libidx tests" ${BUILD_TESTING})
     option(IDX_BUILD_EXAMPLES "Whether to build the libidx examples" ON)
+    option(IDX_BUILD_IDXREAD "Whether to build the idxread executable" ON)
 else()
     # I'm not the top-most project, set IDX_BUILD_TESTING default OFF
     option(IDX_BUILD_TESTING "Whether to build the libidx tests" OFF)
     option(IDX_BUILD_EXAMPLES "Whether to build the libidx examples" OFF)
+    option(IDX_BUILD_IDXREAD "Whether to build the idxread executable" OFF)
 endif()
 
 add_subdirectory(src/idx)
 
-if (IDX_BUILD_EXAMPLES)
+if (IDX_BUILD_IDXREAD)
     add_subdirectory(src/idxread)
+endif()
+if (IDX_BUILD_EXAMPLES)
     add_subdirectory(src/example_uint8_1d)
     add_subdirectory(src/example_int16_2d)
 endif()
