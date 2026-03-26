@@ -288,8 +288,10 @@ static uint8_t read_ndims (FILE * fp) {
 
 static uint8_t read_uint8 (FILE * fp, const size_t pos) {
     // read the byte at index pos
+    errno = 0;
     if (fseek(fp, pos, SEEK_SET) == -1) goto error;
     uint8_t result;
+    errno = 0;
     size_t count = fread(&result, 1, 1, fp);
     if (count != 1) goto error;
     return result;
