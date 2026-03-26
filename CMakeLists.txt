@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.23...3.28 FATAL_ERROR)
 
 project(project LANGUAGES C)
 
-option(IDX_EXAMPLE_ANY_TYPE_WITH_ASAN "Whether to enable address sanitizing for executable 'idx-example-any-type'" OFF)
-option(IDX_EXAMPLE_UINT8_WITH_ASAN "Whether to enable address sanitizing for executable 'idx-example-uint8'" OFF)
+option(EXAMPLE_INT16_2D_WITH_ASAN "Whether to enable address sanitizing for executable 'example-int16-2d'" OFF)
+option(EXAMPLE_UINT8_1D_WITH_ASAN "Whether to enable address sanitizing for executable 'example-uint8-1d'" OFF)
+option(EXAMPLE_IDXREAD_WITH_ASAN "Whether to enable address sanitizing for executable 'idxread'" OFF)
 option(IDX_WITH_ASAN "Whether to enable address sanitizing for library 'libidx.so'" OFF)
 
 include(CTest)
@@ -31,10 +32,10 @@ endif()
 add_subdirectory(src/idx)
 
 if (IDX_BUILD_EXAMPLES)
-    add_subdirectory(src/idx-example-any-type)
-    add_subdirectory(src/idx-example-uint8)
+    add_subdirectory(src/idxread)
+    add_subdirectory(src/example_uint8_1d)
+    add_subdirectory(src/example_int16_2d)
 endif()
 if (IDX_BUILD_TESTING)
     add_subdirectory(test/idx)
 endif()
-

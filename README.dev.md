@@ -28,80 +28,37 @@ $ cmake --install . --prefix dist/
 The above should produce a library, libidx, as well as some executables. 
 
 ```console
-$ ./dist/bin/example-idx-uint8
-Usage: ./example-idx-uint8 FILEPATH
+$ ./dist/bin/example-uint8-1d --help
+Usage: ./dist/bin/example-uint8-1d FILEPATH
+
    Illustrate the usage of the idx library by reading IDX-formatted data
    from a binary file located at FILEPATH. The 3rd byte in the file should
-   be 0x08 to indicate that the body consists of uint8 values.
-$ ./dist/bin/example-idx-uint8 ../data/uint8.idx
-header: {
-    type: 0x08 (uint8),
-    ndims: 2,
-    lengths: [3, 2],
-    nelems: 6,
-    bodystart: 12
-}
-body: [
-    0
-    1
-    15
-    16
-    127
-    255
-]
-$ ./dist/bin/example-idx-uint8 ../data/int8.idx
-Expected data in file "../data/int8.idx" to be of type 0x08 (uint8) but found 0x09 (int8), aborting.
+   be 0x08 to indicate that the body consists of 8-bit unsigned integer values,
+   and the 4th byte should be 1 to indicate that there is just 1 dimension.
+
+   The program reads the data from file and prints the result to standard
+   output.
+
+$ ./dist/bin/example-uint8-1d ../data/uint8.1d.idx
+  0   1  15  16 127 255
 ```
 
 ```console
-$ ./dist/bin/example-idx-any-type
-Usage: ./example-idx-any-type FILEPATH
-   Illustrate the usage of the idx library by reading IDX-formatted
-   data from a binary file located at FILEPATH.
-$ ./dist/bin/example-idx-any-type ../data/uint8.idx
-header: {
-    type: 0x08 (uint8),
-    ndims: 2,
-    lengths: [3, 2],
-    nelems: 6,
-    bodystart: 12
-}
-body: [
-    0
-    1
-    15
-    16
-    127
-    255
-]
-```
+$ ./dist/bin/example-int16-2d --help
+Usage: ./dist/bin/example-int16-2d FILEPATH
 
-## Testing
+   Illustrate the usage of the idx library by reading IDX-formatted data
+   from a binary file located at FILEPATH. The 3rd byte in the file should
+   be 0x0B to indicate that the body consists of 16-bit signed integer values,
+   and the 4th byte should be 2 to indicate that there are 2 dimensions.
 
-Building and running the tests requires that [Criterion](https://github.com/Snaipe/Criterion) is
-installed on the system, e.g. with
+   The program reads the data from file and prints the result to standard
+   output.
 
-```console
-$ sudo apt install libcriterion3 libcriterion-dev
-```
-
-The CMake variable `IDX_BUILD_TESTING` can be used to control whether to build the
-tests.
-
-- When this project is the top project, `IDX_BUILD_TESTING` inherits the value of
-  CTest's `BUILD_TESTING`, which is set to ON by default.
-- When this project is not the top project but instead it is used as a dependency to a parent
-  project, the default is to not build the tests. However, building the tests is still possible by
-  setting the `IDX_BUILD_TESTING` to `ON`, e.g like so:
-
-```console
-$ cmake -DIDX_BUILD_TESTING=ON ..
-```
-
-Afterwards, run the tests with
-
-```console
-$ ./dist/bin/test_idx -j1 --verbose
+$ ./dist/bin/example-int16-2d ../data/int16.2d.idx
+-32768     -1
+     0      0
+     1  32767
 ```
 
 ## Address sanitizing
@@ -113,20 +70,28 @@ To use address sanitizing, you may need to install an extra dependency, e.g. lik
 sudo apt install libasan8
 ```
 
-The CMake variable `EXAMPLE_IDX_UINT8_WITH_ASAN` can be used to enable address sanitizing on the
-executable `example-idx-uint8`. `EXAMPLE_IDX_UINT8_WITH_ASAN`'s value is `OFF` by default. To
+The CMake variable `EXAMPLE_INT16_2D_WITH_ASAN` can be used to enable address sanitizing on the
+executable `example-int16-2d`. `EXAMPLE_INT16_2D_WITH_ASAN`'s value is `OFF` by default. To
 enable it, configure the build via `ccmake ..`, or via a command line argument with:
 
 ```console
-$ cmake -DEXAMPLE_IDX_UINT8_WITH_ASAN=ON ..
+$ cmake -DEXAMPLE_INT16_2D_WITH_ASAN=ON ..
 ```
 
-The CMake variable `EXAMPLE_IDX_ANY_TYPE_WITH_ASAN` can be used to enable address sanitizing on the
-executable `example-idx-any-type`. `EXAMPLE_IDX_ANY_TYPE_WITH_ASAN`'s value is `OFF` by default. To
+The CMake variable `EXAMPLE_UINT8_1D_WITH_ASAN` can be used to enable address sanitizing on the
+executable `example-uint8-1d`. `EXAMPLE_UINT8_1D_WITH_ASAN`'s value is `OFF` by default. To
 enable it, configure the build via `ccmake ..`, or via a command line argument with:
 
 ```console
-$ cmake -DEXAMPLE_IDX_ANY_TYPE_WITH_ASAN=ON ..
+$ cmake -DEXAMPLE_UINT8_1D_WITH_ASAN=ON ..
+```
+
+The CMake variable `EXAMPLE_IDXREAD_WITH_ASAN` can be used to enable address sanitizing on the
+executable `idxread`. `EXAMPLE_IDXREAD_WITH_ASAN`'s value is `OFF` by default. To
+enable it, configure the build via `ccmake ..`, or via a command line argument with:
+
+```console
+$ cmake -DEXAMPLE_IDXREAD_WITH_ASAN=ON ..
 ```
 
 The CMake variable `IDX_WITH_ASAN` can be used to enable address sanitizing on the
