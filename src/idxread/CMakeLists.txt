@@ -1,0 +1,55 @@
+add_executable(tgt_exe_example_idxread)
+
+set_property(TARGET tgt_exe_example_idxread PROPERTY OUTPUT_NAME idxread)
+
+target_compile_definitions(
+    tgt_exe_example_idxread
+    PRIVATE
+        $<$<CONFIG:Debug>:DEBUG>
+)
+
+target_compile_features(
+    tgt_exe_example_idxread
+    PRIVATE
+        c_std_23
+)
+
+target_compile_options(
+    tgt_exe_example_idxread
+    PRIVATE
+        -Wall
+        -Wextra
+        -pedantic
+        -fPIE
+        $<$<CONFIG:Debug>:-g>
+        $<$<CONFIG:Debug>:-O0>
+        $<$<BOOL:${EXAMPLE_IDXREAD_WITH_ASAN}>:-fsanitize=address>
+        $<$<CONFIG:Release>:-Werror>
+)
+
+target_include_directories(
+    tgt_exe_example_idxread
+    PRIVATE
+        ../../include
+)
+
+target_link_libraries(
+    tgt_exe_example_idxread
+    PRIVATE
+        tgt_lib_idx
+)
+
+target_link_options(
+    tgt_exe_example_idxread
+    PRIVATE
+        -pie
+        $<$<BOOL:${EXAMPLE_IDXREAD_WITH_ASAN}>:-fsanitize=address>
+)
+
+target_sources(
+    tgt_exe_example_idxread
+    PRIVATE
+        main.c
+)
+
+install(TARGETS tgt_exe_example_idxread)

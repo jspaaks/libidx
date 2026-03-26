@@ -1,25 +1,3 @@
-# libidx
-
-For instructions on building etc, see [`README.dev.md`](README.dev.md).
-
-C library that can read IDX files, such as those from Yann LeCun et al's handwritten
-numbers data set as well as the Zalando fashion data set.
-
-The IDX format is described here: https://www.fon.hum.uva.nl/praat/manual/IDX_file_format.html
-
-The project builds the following libraries and executables:
-
-- library `libidx`: C library to read IDX files. For library API, see
-  [`include/idx/idx.h`](include/idx/idx.h).
-- executable `example_int16_2d`: example program illustrating how to read a two-dimensional array
-  of type `int16_t`
-- executable `example_uint8_1d`: example program illustrating how to read a one-dimensional array
-  of type `uint8_t`
-- executable `idxread`: program that reads an IDX file and prints it to standard out
-
-## Example program
-
-```c
 #include "idx/idx.h"     // idx_*, IDX_*, Idx_*
 #include <inttypes.h>    // PRIi16
 #include <stdint.h>      // int16_t
@@ -93,20 +71,5 @@ static void show_usage(FILE * stream, const char * programname) {
                     "   and the 4th byte should be 2 to indicate that there are 2 dimensions.\n"
                     "\n"
                     "   The program reads the data from file and prints the result to standard\n"
-                    "   output.\n", programname);
+                    "   output.\n\n", programname);
 }
-```
-
-## Alternatives
-
-- https://github.com/JohnnyVM/idxc
-- https://github.com/BinAl-Sadiq/.idx
-- https://github.com/bwhmather/libidx
-- https://github.com/spytheman/MNIST-idx1-and-idx3-file-readers
-- https://github.com/KaitlynEthylia/libidx
-
-## Acknowledgements
-
-_This project was initialized using [Copier](https://pypi.org/project/copier) and the [copier-template-for-c-projects](https://github.com/jspaaks/copier-template-for-c-projects)._
-
-[![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-grayscale-inverted-border-orange.json)](https://github.com/copier-org/copier)
