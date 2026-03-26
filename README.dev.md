@@ -1,6 +1,5 @@
 # Developer notes
 
-
 ## Data
 
 The [`data`](data) directory contains a few test files in IDX format. Each file's body uses a
@@ -61,6 +60,37 @@ $ ./dist/bin/example-int16-2d ../data/int16.2d.idx
      1  32767
 ```
 
+```console
+$ ./dist/bin/idxread -h
+Usage: ./dist/bin/idxread FILEPATH
+
+    Read IDX-formatted data from a binary file located at FILEPATH.
+
+$ ./dist/bin/idxread ../data/float.2d.idx
+-3.403e+38         -1
+        -0          0
+         1  3.403e+38
+```
+
+## Build flags
+
+| CMake flag                   | Description                                          |
+| ---------------------------- | ---------------------------------------------------- |
+| `EXAMPLE_IDXREAD_WITH_ASAN`  | Address sanitizing for executable `idxread`          |
+| `EXAMPLE_INT16_2D_WITH_ASAN` | Address sanitizing for executable `example-int16-2d` |
+| `EXAMPLE_UINT8_1D_WITH_ASAN` | Address sanitizing for executable `example-uint8-1d` |
+| `IDX_BUILD_EXAMPLES`         | Building the libidx examples                         |
+| `IDX_BUILD_IDXREAD`          | Building the `idxread` executable                    |
+| `IDX_WITH_ASAN`              | Address sanitizing for the idx library               |
+
+To enable/disable a flag, configure the build via `ccmake ..`, or via a command line argument
+with:
+
+```console
+# e.g., for IDX_BUILD_EXAMPLES
+$ cmake -DIDX_BUILD_EXAMPLES=OFF ..
+```
+
 ## Address sanitizing
 
 To use address sanitizing, you may need to install an extra dependency, e.g. like so:
@@ -68,38 +98,6 @@ To use address sanitizing, you may need to install an extra dependency, e.g. lik
 ```console
 # (Ubuntu)
 sudo apt install libasan8
-```
-
-The CMake variable `EXAMPLE_INT16_2D_WITH_ASAN` can be used to enable address sanitizing on the
-executable `example-int16-2d`. `EXAMPLE_INT16_2D_WITH_ASAN`'s value is `OFF` by default. To
-enable it, configure the build via `ccmake ..`, or via a command line argument with:
-
-```console
-$ cmake -DEXAMPLE_INT16_2D_WITH_ASAN=ON ..
-```
-
-The CMake variable `EXAMPLE_UINT8_1D_WITH_ASAN` can be used to enable address sanitizing on the
-executable `example-uint8-1d`. `EXAMPLE_UINT8_1D_WITH_ASAN`'s value is `OFF` by default. To
-enable it, configure the build via `ccmake ..`, or via a command line argument with:
-
-```console
-$ cmake -DEXAMPLE_UINT8_1D_WITH_ASAN=ON ..
-```
-
-The CMake variable `EXAMPLE_IDXREAD_WITH_ASAN` can be used to enable address sanitizing on the
-executable `idxread`. `EXAMPLE_IDXREAD_WITH_ASAN`'s value is `OFF` by default. To
-enable it, configure the build via `ccmake ..`, or via a command line argument with:
-
-```console
-$ cmake -DEXAMPLE_IDXREAD_WITH_ASAN=ON ..
-```
-
-The CMake variable `IDX_WITH_ASAN` can be used to enable address sanitizing on the
-library `libidx.so`. `IDX_WITH_ASAN`'s value is `OFF` by default. To
-enable it, configure the build via `ccmake ..`, or via a command line argument with:
-
-```console
-$ cmake -DIDX_WITH_ASAN=ON ..
 ```
 
 ## `clang-format`
