@@ -6,9 +6,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/param.h>
 
 // implementation-defined opaque type
 struct idx_file_object {
+    char * filepath;
+    bool body_was_read;
+    bool meta_was_read;
     IdxDataType type;
     uint8_t ndims;
     uint32_t * lengths;
@@ -30,10 +34,13 @@ const struct idx_type_prop idx_type_props[IDX_DATA_TYPE_DOUBLE + 1] = {
     [IDX_DATA_TYPE_DOUBLE] = {.name = "double", .width = 8},
 };
 
+static void assert_meta_was_not_read (const struct idx_file_object * self);
+static void assert_meta_was_read (const struct idx_file_object * self);
+static void assert_body_was_not_read (const struct idx_file_object * self);
+static void assert_body_was_read (const struct idx_file_object * self);
 static size_t calc_nelems (const uint32_t * lengths, int ndims);
 static void close_file (FILE * fp);
 static FILE * open_file (const char * filepath);
-static uint8_t * read_body (FILE * fp, int ndims, size_t nelems, IdxDataType type);
 static IdxDataType read_data_type (FILE * fp);
 static uint32_t * read_dimension_lengths (FILE * fp, int ndims);
 static uint8_t read_ndims (FILE * fp);
@@ -41,6 +48,34 @@ static uint8_t read_uint8 (FILE * fp, const size_t pos);
 static void swap_byte_order_in_place (const int nbytes, uint8_t * bytes);
 static void validate_magic_number (FILE * fp);
 
+static void assert_meta_was_not_read (const struct idx_file_object * self) {
+    if (self->meta_was_read) {
+        fprintf(stderr, "ERROR: metadata has already been read, aborting.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+static void assert_meta_was_read (const struct idx_file_object * self) {
+    if (self->meta_was_read == false) {
+        fprintf(stderr, "ERROR: metadata hasn't been read yet, aborting.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+static void assert_body_was_not_read (const struct idx_file_object * self) {
+    if (self->body_was_read) {
+        fprintf(stderr, "ERROR: body has already been read, aborting.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+static void assert_body_was_read (const struct idx_file_object * self) {
+    if (self->body_was_read == false) {
+        fprintf(stderr, "ERROR: body hasn't been read yet, aborting.\n");
+        exit(EXIT_FAILURE);
+    }
+}
 
 static size_t calc_nelems (const uint32_t * lengths, int ndims) {
     size_t nelems = 1;
@@ -54,32 +89,42 @@ static void close_file (FILE * fp) {
     fclose(fp);
 }
 
-struct idx_file_object * idx_create_and_read (const char * filepath) {
-    FILE * fp = open_file(filepath);
-    validate_magic_number(fp);
-    uint8_t type = read_data_type(fp);
-    uint8_t ndims = read_ndims(fp);
-    uint32_t * lengths = read_dimension_lengths(fp, ndims);
-    size_t nelems = calc_nelems(lengths, ndims);
-    uint8_t * buffer = read_body(fp, ndims, nelems, type);
-    close_file(fp);
-
+struct idx_file_object * idx_create (const char * filepath) {
     struct idx_file_object * o = calloc(1, sizeof(struct idx_file_object));
     if (o == nullptr) {
         fprintf(stderr, "Something went wrong allocating dynamic memory for `struct idx_file_object`, aborting.\n");
         exit(EXIT_FAILURE);
     }
+    int cap = 256;
+    int len = strlen(filepath) + 1;
+    if (len > cap) {
+        fprintf(stderr, "Parameter `filepath` too long (%d > %d), aborting.\n", len, cap);
+        exit(EXIT_FAILURE);
+    }
+    char * filepath_copy = calloc(len, sizeof(char));
+    if (filepath_copy == nullptr) {
+        fprintf(stderr, "Something went wrong allocating dynamic memory for storing filepath, aborting.\n");
+        exit(EXIT_FAILURE);
+    }
+    strncpy(filepath_copy, filepath, len);
     *o = (struct idx_file_object) {
-        .type = type,
-        .ndims = ndims,
-        .lengths = lengths,
-        .nelems = nelems,
-        .buffer = buffer,
+        .body_was_read = false,
+        .meta_was_read = false,
+        .filepath = filepath_copy,
+        .type = 0,
+        .ndims = 0,
+        .lengths = nullptr,
+        .nelems = 0,
+        .buffer = nullptr,
     };
     return o;
 }
 
 void idx_destroy (struct idx_file_object ** self) {
+
+    free((*self)->filepath);
+    (*self)->filepath = nullptr;
+
     free((*self)->lengths);
     (*self)->lengths = nullptr;
 
@@ -91,6 +136,7 @@ void idx_destroy (struct idx_file_object ** self) {
 }
 
 int idx_get_dim_length (const struct idx_file_object * self, int idim) {
+    assert_meta_was_read(self);
     uint32_t length = idx_get_dim_length_raw(self, idim);
     size_t w = sizeof(int) * 8;
     if (length <= INT_MAX) return (int) length;
@@ -100,6 +146,7 @@ int idx_get_dim_length (const struct idx_file_object * self, int idim) {
 }
 
 uint32_t idx_get_dim_length_raw (const struct idx_file_object * self, int idim) {
+    assert_meta_was_read(self);
     if (0 <= idim && idim < self->ndims) {
         return self->lengths[idim];
     }
@@ -108,15 +155,18 @@ uint32_t idx_get_dim_length_raw (const struct idx_file_object * self, int idim) 
 }
 
 int idx_get_ndims (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
     // uint8_t always fits within int, can use casting directly
     return (int) idx_get_ndims_raw(self);
 }
 
 uint8_t idx_get_ndims_raw (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
     return self->ndims;
 }
 
 int idx_get_nelems (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
     size_t nelems = idx_get_nelems_raw(self);
     size_t w = sizeof(int) * 8;
     if (nelems <= INT_MAX) return (int) nelems;
@@ -126,18 +176,23 @@ int idx_get_nelems (const struct idx_file_object * self) {
 }
 
 size_t idx_get_nelems_raw (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
     return self->nelems;
 }
 
 IdxDataType idx_get_type (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
     return self->type;
 }
 
 const char * idx_get_type_name (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
     return idx_type_props[self->type].name;
 }
 
 const double * idx_get_data_double (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
+    assert_body_was_read(self);
     if (self->type == IDX_DATA_TYPE_DOUBLE) {
         return (const double *) self->buffer;
     }
@@ -146,6 +201,8 @@ const double * idx_get_data_double (const struct idx_file_object * self) {
 }
 
 const float * idx_get_data_float (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
+    assert_body_was_read(self);
     if (self->type == IDX_DATA_TYPE_FLOAT) {
         return (const float *) self->buffer;
     }
@@ -154,6 +211,8 @@ const float * idx_get_data_float (const struct idx_file_object * self) {
 }
 
 const int8_t * idx_get_data_int8 (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
+    assert_body_was_read(self);
     if (self->type == IDX_DATA_TYPE_INT8) {
         return (const int8_t *) self->buffer;
     }
@@ -162,6 +221,8 @@ const int8_t * idx_get_data_int8 (const struct idx_file_object * self) {
 }
 
 const int16_t * idx_get_data_int16 (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
+    assert_body_was_read(self);
     if (self->type == IDX_DATA_TYPE_INT16) {
         return (const int16_t *) self->buffer;
     }
@@ -170,6 +231,8 @@ const int16_t * idx_get_data_int16 (const struct idx_file_object * self) {
 }
 
 const int32_t * idx_get_data_int32 (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
+    assert_body_was_read(self);
     if (self->type == IDX_DATA_TYPE_INT32) {
         return (const int32_t *) self->buffer;
     }
@@ -178,11 +241,72 @@ const int32_t * idx_get_data_int32 (const struct idx_file_object * self) {
 }
 
 const uint8_t * idx_get_data_uint8 (const struct idx_file_object * self) {
+    assert_meta_was_read(self);
+    assert_body_was_read(self);
     if (self->type == IDX_DATA_TYPE_UINT8) {
         return (const uint8_t *) self->buffer;
     }
     fprintf(stderr, "Data is not in uint8_t format, aborting.\n");
     exit(EXIT_FAILURE);
+}
+
+void idx_read_body (struct idx_file_object * self) {
+    assert_meta_was_read(self);
+    assert_body_was_not_read(self);
+    FILE * fp = open_file(self->filepath);
+
+    // determine how much space we need given we want to store `nelems` data of type `type`
+    int w = idx_type_props[self->type].width;
+    const size_t nbytes = w * self->nelems;
+
+    // allocate dynamic mmory for storing the body data
+    errno = 0;
+    uint8_t * body = calloc(nbytes * sizeof(uint8_t), 1);
+    if (body == nullptr) {
+        fprintf(stderr, "%s\nError allocating memory for IDX body, aborting.\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    // put the cursor at the starting byte of the body
+    int start = 2 + 1 + 1 + self->ndims * sizeof(uint32_t);
+    fseek(fp, start, SEEK_SET);
+
+    // read nbytes into `body`
+    const size_t count = fread(body, 1, nbytes, fp);
+    if (count != nbytes) {
+        fprintf(stderr, "Something went wrong reading data from IDX file, aborting.\n");
+        fclose(fp);
+        exit(EXIT_FAILURE);
+    }
+    close_file(fp);
+
+    // swap byte order for types of width > 1
+    if (w > 1) {
+        for (size_t i = 0; i < self->nelems; i++) {
+            swap_byte_order_in_place(w, &body[i * w]);
+        }
+    }
+    self->buffer = body;
+    self->body_was_read = true;
+}
+
+void idx_read_meta (struct idx_file_object * self) {
+    assert_meta_was_not_read(self);
+    assert_body_was_not_read(self);
+
+    FILE * fp = open_file(self->filepath);
+    validate_magic_number(fp);
+    uint8_t type = read_data_type(fp);
+    uint8_t ndims = read_ndims(fp);
+    uint32_t * lengths = read_dimension_lengths(fp, ndims);
+    size_t nelems = calc_nelems(lengths, ndims);
+    close_file(fp);
+
+    self->meta_was_read = true;
+    self->type = type;
+    self->ndims = ndims;
+    self->lengths = lengths;
+    self->nelems = nelems;
 }
 
 static FILE * open_file(const char * filepath) {
@@ -194,40 +318,6 @@ static FILE * open_file(const char * filepath) {
         exit(EXIT_FAILURE);
     }
     return fp;
-}
-
-static uint8_t * read_body (FILE * fp, int ndims, size_t nelems, IdxDataType type) {
-    // determine how much space we need given we want to store `nelems` data of type `type`
-    int w = idx_type_props[type].width;
-    const size_t nbytes = w * nelems;
-
-    // allocate dynamic mmory for storing the body data
-    errno = 0;
-    uint8_t * body = calloc(nbytes * sizeof(uint8_t), 1);
-    if (body == nullptr) {
-        fprintf(stderr, "%s\nError allocating memory for IDX body, aborting.\n", strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-
-    // put the cursor at the starting byte of the body
-    int start = 2 + 1 + 1 + ndims * sizeof(uint32_t);
-    fseek(fp, start, SEEK_SET);
-
-    // read nbytes into `body`
-    const size_t count = fread(body, 1, nbytes, fp);
-    if (count != nbytes) {
-        fprintf(stderr, "Something went wrong reading data from IDX file, aborting.\n");
-        fclose(fp);
-        exit(EXIT_FAILURE);
-    }
-
-    // swap byte order for types of width > 1
-    if (w > 1) {
-        for (size_t i = 0; i < nelems; i++) {
-            swap_byte_order_in_place(w, &body[i * w]);
-        }
-    }
-    return body;
 }
 
 static IdxDataType read_data_type (FILE * fp) {

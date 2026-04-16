@@ -17,8 +17,12 @@ typedef enum : uint8_t {
 } IdxDataType;
 
 // creating and destroying
-IDX_EXPORT struct idx_file_object * idx_create_and_read (const char * filepath);
+IDX_EXPORT struct idx_file_object * idx_create (const char * filepath);
 IDX_EXPORT void idx_destroy (struct idx_file_object ** self);
+
+// data readers
+IDX_EXPORT void idx_read_body (struct idx_file_object * self);
+IDX_EXPORT void idx_read_meta (struct idx_file_object * self);
 
 // metadata getters
 IDX_EXPORT int idx_get_dim_length (const struct idx_file_object * self, int idim);
