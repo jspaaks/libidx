@@ -106,7 +106,9 @@ struct idx_file_object * idx_create (const char * filepath) {
         fprintf(stderr, "Something went wrong allocating dynamic memory for storing filepath, aborting.\n");
         exit(EXIT_FAILURE);
     }
-    strncpy(filepath_copy, filepath, len);
+    memcpy(filepath_copy, filepath, len - 1);
+    filepath_copy[len - 1] = '\0';
+
     *o = (struct idx_file_object) {
         .body_was_read = false,
         .meta_was_read = false,
