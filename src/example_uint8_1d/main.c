@@ -24,8 +24,9 @@ int main (const int argc, const char * argv[]) {
 
     // create the IDX file object
     const char * filename = argv[1];
-    IdxFileObject * o = idx_create_and_read(filename);
-
+    IdxFileObject * o = idx_create(filename);
+    idx_read_meta(o);
+    idx_read_body(o);
     // verify the data has the right number of dimensions
     if (idx_get_ndims(o) != 1) {
         fprintf(stderr, "Expected 1 dimension, aborting.\n");

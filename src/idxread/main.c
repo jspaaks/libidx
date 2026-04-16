@@ -32,7 +32,9 @@ int main (const int argc, const char * argv[]) {
                 [IDX_DATA_TYPE_DOUBLE] = strat_double
             };
 
-            IdxFileObject * o = idx_create_and_read(filepath);
+            IdxFileObject * o = idx_create(filepath);
+            idx_read_meta(o);
+            idx_read_body(o);
             IdxDataType t = idx_get_type(o);
             strategies[t](o);
             idx_destroy(&o);
@@ -42,35 +44,24 @@ int main (const int argc, const char * argv[]) {
     } else if (argc == 3) {
         if (strcmp(argv[1], "-m") == 0 || strcmp(argv[1], "--show-meta") == 0) {
             const char * filepath = argv[2];
-            IdxFileObject * o = idx_create_and_read(filepath);
+            IdxFileObject * o = idx_create(filepath);
+            idx_read_meta(o);
             uint8_t type = (uint8_t) idx_get_type(o);
             uint8_t ndims = idx_get_ndims_raw(o);
-            uint32_t * lengths = calloc(ndims, sizeof(uint32_t));
-            if (lengths == nullptr) {
-                fprintf(stderr, "Something went wrong allocating memory for the array\n"
-                                "holding the dimension lengths, aborting.\n");
-                exit(EXIT_FAILURE);
-            }
-            for (uint8_t idim = 0; idim < ndims; idim++) {
-                lengths[idim] = idx_get_dim_length_raw(o, idim);
-            }
             size_t nelems = idx_get_nelems_raw(o);
             const char * type_name = idx_get_type_name(o);
-
             fprintf(stdout, "path              : %s\n", filepath);
             fprintf(stdout, "type              : 0x%02hhx (%s)\n", type, type_name);
             fprintf(stdout, "ndims             : %hhu \n", ndims);
             fprintf(stdout, "dimension lengths : ");
             for (int idim = 0; idim < ndims; idim++) {
                 char c = idim % 10 == 9 ? '\n' : ' ';
-                fprintf(stdout, "%" PRIu32 "%c", lengths[idim], c);
+                uint32_t len = idx_get_dim_length_raw(o, idim);
+                fprintf(stdout, "%" PRIu32 "%c", len, c);
             }
             fprintf(stdout, "\n");
             fprintf(stdout, "number of elements: %zu\n", nelems);
-
             idx_destroy(&o);
-            free(lengths);
-            lengths = nullptr;
             exit(EXIT_SUCCESS);
         } else {
             show_usage(stderr, argv[0]);
